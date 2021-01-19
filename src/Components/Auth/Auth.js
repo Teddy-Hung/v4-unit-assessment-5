@@ -24,7 +24,9 @@ class Auth extends Component {
   login() {
     axios.post('/api/auth/login', this.state)
       .then(res => {
-        //code here
+        this.props.getUser(res.data)
+
+        this.props.history.push('/dashboard')
       })
       .catch(err => {
         console.log(err)
