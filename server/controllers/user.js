@@ -2,12 +2,12 @@ const bcrypt = require('bcryptjs')
 
 module.exports = {
     register: async(req, res) => {
-        const {username, password} = req.body
-        const profile_pic = 'https://robohash.org/${username}.png'
+        let {username, password, profile_pic} = req.body
+        profile_pic = `https://robohash.org/${username}.png`
         const db = req.app.get('db')
 
-        //Checks if the user already has account
-        const foundUser = await db.find_user_by_username({username})
+        // Checks if the user already has account
+        const foundUser = await db.user.find_user_by_username([username])
         if(foundUser[0]){
             return res.status(400).send('Username is already taken')
         }
@@ -16,10 +16,9 @@ module.exports = {
         let salt = bcrypt.genSaltSync(10)
         const hash = bcrypt.hashSync(password, salt)
 
-        const newUser = await db.create_user({username, hash, profile_pic})
-        
+        const newUser = await db.user.create_user([username, hash, profile_pic])
         //place user on a session, sending info to client-side
-        req.session.user = newUser[0]
+        req.session.user =  newUser[0]
         res.status(201).send(req.session.user)
 
     },
@@ -28,8 +27,8 @@ module.exports = {
         const db = req.app.get('db')
 
         //Checks if the user is already in the db
-        const foundUser = await db.find_user_by_username({username})
-        if(foundUser[0]){
+        const foundUser = await db.user.find_user_by_username([username])
+        if(!foundUser[0]){
             return res.status(404).send('Username not found')
         }
         //password check
@@ -50,7 +49,7 @@ module.exports = {
     },
     getUser: async(req, res) => {
         if(req.session.user){
-           res.send(req.session.user) 
+            res.status(200).send(req.session.user)
         }else{
             res.sendStatus(404)
         }
